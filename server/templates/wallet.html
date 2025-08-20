@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet Details — Blockchain App</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: Helvetica, Arial, sans-serif;
+      background: #fff;
+      color: #111;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .main-container {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .wallet-details {
+      text-align: center;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .address {
+      font-size: 0.6rem;
+      color: #6b7280;
+      word-break: break-all;
+    }
+    .balance-box {
+      width: 100%;
+      border: 1px solid #000;
+      padding: 2rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .balance {
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+    .actions-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .action-box {
+      flex: 1;
+      border: 1px solid #000;
+      padding: 1rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      text-align: center;
+      background: #000;
+      color: #fff;
+      transition: all 0.2s ease-in-out;
+    }
+    .action-box:hover {
+        background: #fff;
+        color: #000;
+    }
+    .action-box h2 {
+      font-size: 1.2rem;
+      margin: 0;
+    }
+    .popup-menu {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 450px;
+      background: #fff;
+      border: 1px solid #000;
+      padding: 2rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+      gap: 1.5rem;
+      z-index: 1000;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .popup-menu h2 {
+      margin: 0;
+    }
+    .popup-menu input {
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: 1px solid #000;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .popup-menu button {
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: 1px solid #000;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+    }
+    .popup-menu .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 999;
+    }
+    #mine-feedback {
+        word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="wallet-details">
+      <h1>Wallet Details</h1>
+      <p class="address">{{ address }}</p>
+    </div>
+
+    <div class="balance-box">
+      <p class="balance">{{ balance }} BTC</p>
+    </div>
+
+    <div class="actions-row">
+      <div class="action-box" id="mine-btn">
+        <h2>Mine</h2>
+      </div>
+      <div class="action-box" id="send-btn">
+        <h2>Send Money</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Menus -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Mine Popup -->
+  <div class="popup-menu" id="mine-popup">
+    <span class="close-btn">&times;</span>
+    <h2>Mine</h2>
+    <div id="mine-feedback"></div>
+  </div>
+
+  <!-- Send Money Popup -->
+  <div class="popup-menu" id="send-popup">
+    <span class="close-btn">&times;</span>
+    <h2>Send Money</h2>
+    <form id="send-form" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+      <input type="text" id="recipient-address" placeholder="Recipient Address" required>
+      <input type="number" id="amount" placeholder="Amount" step="any" required>
+      <input type="hidden" id="sender-address" value="{{ address }}">
+      <button type="submit" class="btn">Send</button>
+    </form>
+    <div id="send-feedback" style="margin-top: 1rem;"></div>
+  </div>
+  
+  <script>
+    const overlay = document.getElementById('overlay');
+    const mineBtn = document.getElementById('mine-btn');
+    const sendBtn = document.getElementById('send-btn');
+    const minePopup = document.getElementById('mine-popup');
+    const sendPopup = document.getElementById('send-popup');
+    const mineFeedback = document.getElementById('mine-feedback');
+    const sendForm = document.getElementById('send-form');
+    const sendFeedback = document.getElementById('send-feedback');
+    const currentBalance = document.querySelector('.balance');
+    const walletAddress = "{{ address }}";
+
+    mineBtn.addEventListener('click', function() {
+        showPopup(minePopup);
+        mineBlockchain();
+    });
+
+    sendBtn.addEventListener('click', function() {
+        showPopup(sendPopup);
+    });
+
+    document.querySelectorAll('.close-btn, .overlay').forEach(btn => {
+        btn.addEventListener('click', hidePopups);
+    });
+
+    sendForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        sendTransaction();
+    });
+
+    function showPopup(popup) {
+        overlay.style.display = 'block';
+        popup.style.display = 'flex';
+    }
+
+    function hidePopups() {
+        overlay.style.display = 'none';
+        minePopup.style.display = 'none';
+        sendPopup.style.display = 'none';
+        mineFeedback.textContent = '';
+        sendFeedback.textContent = '';
+    }
+
+    function mineBlockchain() {
+        mineFeedback.textContent = 'Mining in progress...';
+        
+        fetch('/mine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ miner_address: walletAddress })
+        })
+        .then(response => response.json())
+        .then(data => {
+            mineFeedback.textContent = data.message;
+            fetchBalanceAndUpdate();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mineFeedback.textContent = 'An error occurred during mining.';
+        });
+    }
+
+    function fetchBalanceAndUpdate() {
+        fetch('/get_balance?address=' + walletAddress)
+            .then(response => response.json())
+            .then(data => {
+                const formattedBalance = parseFloat(data.balance).toFixed(2);
+                currentBalance.textContent = formattedBalance + ' BTC';
+            })
+            .catch(error => {
+                console.error('Error fetching balance:', error);
+            });
+    }
+
+    function sendTransaction() {
+        sendFeedback.textContent = 'Sending transaction...';
+
+        const recipientAddress = document.getElementById('recipient-address').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+
+        const signaturePlaceholder = 'mock-signature';
+
+        fetch('/new_transaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sender: walletAddress,
+                recipient: recipientAddress,
+                amount: amount,
+                signature: signaturePlaceholder
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            sendFeedback.textContent = data.message;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            sendFeedback.textContent = 'An error occurred during the transaction.';
+        });
+    }
+
+    // New function to start the auto-refresh
+    function startAutoRefresh() {
+        // Set the interval to call fetchBalanceAndUpdate every 1000 milliseconds (1 second)
+        setInterval(fetchBalanceAndUpdate, 1000);
+    }
+    
+    // Call the function to start the auto-refresh when the page loads
+    window.onload = startAutoRefresh;
+
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ username }}'s Wallets — Blockchain App</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Helvetica, Arial, sans-serif;
+      background: #fff;
+      color: #111;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .main-container {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0 0 1rem 0;
+      text-align: center;
+    }
+    .wallet-link {
+      width: 100%;
+      text-decoration: none;
+      color: inherit;
+    }
+    .wallet {
+      width: 100%;
+      border: 1px solid #000;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      gap: 0.5rem;
+      cursor: pointer;
+      box-sizing: border-box; /* Ensures padding is included in the width */
+      min-height: 12vh; /* Increased the height */
+    }
+    .wallet-info {
+        width: 100%;
+        text-align: center;
+    }
+    .wallet-info p {
+      margin: 0;
+      font-size: 0.6rem;
+      color: #6b7280;
+      text-align: center;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wallet-balance {
+      font-weight: bold;
+      white-space: nowrap;
+      width: 100%;
+      text-align: center;
+    }
+    .create-wallet-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: 1px solid #000;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease-in-out;
+    }
+    .create-wallet-btn:hover {
+      background: #fff;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <h1>{{ username }}'s Wallets</h1>
+    <!-- This loop iterates over the list of wallets provided by the backend -->
+    {% for wallet in wallets %}
+    <a href="{{ url_for('wallet_page', username=username, address=wallet.address) }}" class="wallet-link">
+      <div class="wallet">
+        <!-- The balance is now dynamically populated by the backend -->
+        <div class="wallet-balance">
+          {{ "%.2f" | format(wallet.balance) }} BTC
+        </div>
+        <div class="wallet-info">
+          <p>{{ wallet.address }}</p>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+    <a href="#" class="create-wallet-btn">Create Wallet</a>
+  </div>
+</body>
+</html>
+

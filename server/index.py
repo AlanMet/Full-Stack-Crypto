@@ -1,4 +1,3 @@
-# blockchain_app.py
 import os
 from flask import Flask, render_template, request, send_from_directory, redirect, url_for, jsonify
 from blockchain import Blockchain, Wallet
@@ -35,13 +34,12 @@ def create_account():
 
 @app.route('/login', methods=['POST'])
 def log_in():
-    # Use form data instead of JSON
     username = request.form.get('username')
     password = request.form.get('password')
 
     for user in users:
         if user['username'] == username and user['password'] == password:
-            return redirect(url_for("dashboard_page", username=username))
+            return redirect(url_for("wallets_page", username=username))
 
     return redirect(url_for("log_in_page"))
 
@@ -109,20 +107,42 @@ def get_wallets():
 
     return jsonify({"error": "User not found."}), 404
 
-CLIENT_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'client'))
+@app.route('/')
+def home_page():
+    return render_template('index.html')
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_client(path):
-    if path == "":
-        return send_from_directory(CLIENT_FOLDER, 'index.html')
-    else:
-        return send_from_directory(CLIENT_FOLDER, path)
+@app.route('/login')
+def log_in_page():
+    return render_template('login.html')
 
-# This is the new dashboard route
-@app.route('/dashboard/<username>')
-def dashboard_page(username):
-    # This is where you would render your dashboard HTML template
-    # For now, let's just return a simple message
-    return f"Welcome to the dashboard, {username}!"
+@app.route('/wallets/<string:username>')
+def wallets_page(username):
+    user_wallets = []
+    for user in users:
+        if user['username'] == username:
+            user_wallets = user['wallets']
+            break
+            
+    wallets_with_balance = []
+    for wallet in user_wallets:
+        balance = blockchain.get_balance(wallet.address)
+        wallets_with_balance.append({'address': wallet.address, 'balance': balance})
+            
+    return render_template('wallets.html', username=username, wallets=wallets_with_balance)
 
+@app.route('/wallets/<string:username>/<string:address>')
+def wallet_page(username, address):
+    is_valid_wallet = False
+    for user in users:
+        if user['username'] == username:
+            for wallet in user['wallets']:
+                if wallet.address == address:
+                    is_valid_wallet = True
+                    break
+            break
+
+    if not is_valid_wallet:
+        return redirect(url_for('wallets_page', username=username))
+
+    balance = blockchain.get_balance(address)
+    return render_template('wallet.html', username=username, address=address, balance=balance)
