@@ -91,11 +91,9 @@
 <body>
   <div class="main-container">
     <h1>{{ username }}'s Wallets</h1>
-    <!-- This loop iterates over the list of wallets provided by the backend -->
     {% for wallet in wallets %}
     <a href="{{ url_for('wallet_page', username=username, address=wallet.address) }}" class="wallet-link">
       <div class="wallet">
-        <!-- The balance is now dynamically populated by the backend -->
         <div class="wallet-balance">
           {{ "%.2f" | format(wallet.balance) }} BTC
         </div>
@@ -107,6 +105,39 @@
     {% endfor %}
     <a href="#" class="create-wallet-btn">Create Wallet</a>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const createWalletBtn = document.querySelector('.create-wallet-btn');
+
+      createWalletBtn.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevents the link from navigating to '#'
+
+        // The username is passed from the Flask template
+        const username = '{{ username }}';
+
+        fetch('/create_wallet', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username: username }),
+        })
+        .then(response => {
+          if (response.ok) {
+            // If the wallet was created successfully, reload the page
+            window.location.reload();
+          } else {
+            // Handle any errors from the server
+            alert('Failed to create wallet.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while creating the wallet.');
+        });
+      });
+    });
+  </script>
 </body>
 </html>
-

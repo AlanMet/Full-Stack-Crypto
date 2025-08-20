@@ -70,7 +70,7 @@ class Block():
 
 
 class Blockchain():
-    difficulty = 4
+    difficulty = 5
     reward = 100
     
     def __init__(self):
